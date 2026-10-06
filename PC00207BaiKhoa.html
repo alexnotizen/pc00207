@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BÀI 7 - BÀI KHÓA</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; font-family:Arial,"Microsoft YaHei",sans-serif;
+  background:linear-gradient(135deg,#eef4ff,#f9fbff);
+  display:flex; justify-content:center; color:#202124;
+}
+.app{width:min(900px,96vw); padding:20px 0 30px}
+h1{text-align:center;margin:0 0 6px;font-size:32px}
+.subtitle{text-align:center;color:#666;margin-bottom:14px;font-size:18px}
+.progress{text-align:center;font-size:18px;color:#666;margin-bottom:12px}
+.card-wrap{perspective:1200px; cursor:pointer}
+.card{
+  width:100%; height:750px; position:relative; transform-style:preserve-3d;
+  transition:transform .55s ease;
+}
+.card.flipped{transform:rotateY(180deg)}
+.face{
+  position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden;
+  border-radius:24px; background:white; box-shadow:0 12px 35px rgba(30,60,100,.15);
+  display:flex; flex-direction:column; justify-content:space-between;
+  padding:32px 36px; border:1px solid #e6eaf0; overflow:hidden;
+}
+.back{transform:rotateY(180deg)}
+
+.card-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.context-title {
+  font-weight: bold;
+  margin-bottom: 20px;
+  font-size: 22px;
+  color: #2c3e50;
+  line-height: 1.5;
+  border-bottom: 2px solid #edf2f7;
+  padding-bottom: 12px;
+}
+.dialogue-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.dialogue-table td {
+  vertical-align: top;
+  padding: 10px 0;
+}
+.speaker-col {
+  width: 140px;
+  color: #000000;
+  font-weight: bold;
+  font-size: 24px;
+  white-space: nowrap;
+}
+.speaker-col-front {
+  width: 140px;
+  color: #718096;
+  font-weight: bold;
+  font-size: 40.5px;
+  white-space: nowrap;
+}
+.speech-col {
+  color: #e53e3e;
+  font-weight: bold;
+  font-size: 40.5px;
+  line-height: 1.5;
+}
+.speech-col-back {
+  color: #e53e3e;
+  font-weight: bold;
+  font-size: 27px;
+  line-height: 1.5;
+}
+.pinyin-block {
+  color: #718096;
+  font-weight: bold;
+  font-size: 22px;
+  margin-top: 4px;
+  margin-bottom: 4px;
+  display: block;
+}
+.meaning-text {
+  font-size: 21px;
+  color: #4b5563;
+  font-weight: normal;
+  margin-top: 4px;
+}
+
+.audio-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 22px;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+  vertical-align: middle;
+}
+.audio-btn:hover {
+  background-color: #edf2f7;
+}
+
+.hint{color:#888; font-size:18px; text-align:center; margin-top:14px}
+.controls{display:flex;gap:16px;justify-content:center;margin-top:22px}
+button{
+  border:0;border-radius:14px;padding:16px 26px;font-size:20px;
+  cursor:pointer;background:#e9eef7;color:#233044;
+}
+button.primary{background:#2563eb;color:white}
+button:hover{filter:brightness(.97)}
+.extra{display:flex;justify-content:center;gap:10px;margin-top:14px}
+.shuffle{background:#e9f8ef}
+
+@media(max-width:600px){
+ .app{padding-top:16px}.card{height:780px}
+ .face{padding:22px 20px}
+ .context-title{font-size:18px; margin-bottom:14px}
+ .speaker-col{width:100px; font-size:18px}
+ .speaker-col-front{width:100px; font-size:30px}
+ .speech-col{font-size:30px}
+ .speech-col-back{font-size:20px}
+ .pinyin-block{font-size:17px;}
+ .meaning-text{font-size:16px}
+ .controls button{padding:12px 16px; font-size:16px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>🇨🇳 BÀI 7 - BÀI KHÓA</h1>
+
+  <div class="progress" id="progress"></div>
+
+  <div class="card-wrap" id="cardWrap" onclick="flipCard()">
+    <div class="card" id="card">
+      <div class="face front">
+        <div class="card-content" id="frontContent"></div>
+      </div>
+      <div class="face back">
+        <div class="card-content" id="backContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="event.stopPropagation();prevCard()">← Trước</button>
+    <button class="primary" onclick="event.stopPropagation();flipCard()">Lật thẻ</button>
+    <button onclick="event.stopPropagation();nextCard()">Tiếp →</button>
+  </div>
+  <div class="extra">
+    <button class="shuffle" onclick="event.stopPropagation();shuffleCards()">🔀 Trộn thẻ</button>
+  </div>
+</div>
+
+<script>
+const originalCards = [
+  {
+    "frontContext": "BÀI KHÓA 1: Vọng Nguyệt (Wàngyuè) và Lý Chung Văn (Lǐ Zhōngwén) bàn về kế hoạch du lịch của trường",
+    "frontLines": [
+      { "speaker": "李钟文:", "speech": "望月，你看学院发的旅行计划了吗？" },
+      { "speaker": "望月:", "speech": "看了，不过我还没想好去哪儿。你想好了吗？" },
+      { "speaker": "李钟文:", "speech": "我就是来找你商量的。我是第一次来中国。" },
+      { "speaker": "望月:", "speech": "可我除了去过几个南方城市以外，北方城市都没去过。" },
+      { "speaker": "李钟文:", "speech": "我们国家大部分地方都是山，我从来没见过大草原的景色，也没骑过马。说实话，我对烤肉也很有兴趣。" },
+      { "speaker": "望月:", "speech": "我知道了，你想去草原骑马、吃烤肉。行！你去哪儿，我就去哪儿。咱俩一起去。" }
+    ],
+    "backLines": [
+      { "speaker": "李钟文:", "speech": "望月，你看学院发的旅行计划了吗？", "pinyin": "Wàngyuè, nǐ kàn xuéyuàn fā de lǚxíng jìhuà le ma?", "meaning": "Vọng Nguyệt, cậu xem kế hoạch du lịch mà học viện phát chưa?" },
+      { "speaker": "望月:", "speech": "看了，不过我还没想好去哪儿。你想好了吗？", "pinyin": "Kàn le, búguò wǒ hái méi xiǎnghǎo qù nǎr. Nǐ xiǎnghǎo le ma?", "meaning": "Xem rồi, nhưng tớ vẫn chưa nghĩ xong sẽ đi đâu. Cậu nghĩ xong chưa?" },
+      { "speaker": "李钟文:", "speech": "我就是来找你商量的。我是第一次来中国。", "pinyin": "Wǒ jiù shì lái zhǎo nǐ shāngliang de. Wǒ shì dì yī cì lái Zhōngguó.", "meaning": "Tớ chính là đến tìm cậu để bàn bạc đây. Tớ là lần đầu tiên đến Trung Quốc." },
+      { "speaker": "望月:", "speech": "可我除了去过几个南方城市以外，北方城市都没去过。", "pinyin": "Kě wǒ chúle qùguo jǐ ge nánfāng chéngshì yǐwài, běifāng chéngshì dōu méi qùguo.", "meaning": "Nhưng tớ ngoài việc đã từng đi qua mấy thành phố miền Nam ra, thì thành phố miền Bắc đều chưa đi qua." },
+      { "speaker": "李钟文:", "speech": "我们国家大部分地方都是山，我从来没见过大草原的景色，也没骑过马。说实话，我对烤肉也很有兴趣。", "pinyin": "Wǒmen guójiā dà bùfen dìfang dōu shì shān, wǒ cónglái méi jiànguo dà cǎoyuán de jǐngsè, yě méi qíguo mǎ. Shuō shíhuà, wǒ duì kǎoròu yě hěn yǒu xìngqù.", "meaning": "Đất nước chúng tớ phần lớn nơi nào cũng là núi, tớ từ trước đến nay chưa từng thấy cảnh sắc của thảo nguyên lớn, cũng chưa từng cưỡi ngựa. Nói thật, tớ đối với thịt nướng cũng rất có hứng thú." },
+      { "speaker": "望月:", "speech": "我知道了，你想去草原骑马、吃烤肉。行！你去哪儿，我就去哪儿。咱俩一起去。", "pinyin": "Wǒ zhīdào le, nǐ xiǎng qù cǎoyuán qímǎ, chī kǎoròu. Xíng! Nǐ qù nǎr, wǒ jiù qù nǎr. Zánliǎ yìqǐ qù.", "meaning": "Tớ biết rồi, cậu muốn đi thảo nguyên cưỡi ngựa, ăn thịt nướng. Được! Cậu đi đâu, tớ sẽ đi đó. Hai chúng ta cùng nhau đi." }
+    ]
+  },
+  {
+    "frontContext": "BÀI KHÓA 2: Hoàng Dũng (Huáng Yǒng) và Phi Long (Fēi Lóng) bàn về kế hoạch du lịch của trường",
+    "frontLines": [
+      { "speaker": "黄勇:", "speech": "你可以选两个地方，先去洛阳或者大同，然后再去草原。" },
+      { "speaker": "飞龙:", "speech": "好主意！这样既可以游览名胜古迹，又可以骑马看草原。" },
+      { "speaker": "黄勇:", "speech": "洛阳、大同去一个就行了，你打算去哪儿呢？" },
+      { "speaker": "飞龙:", "speech": "当然是洛阳了。除了可以游览龙门石窟以外，还可以去少林寺。" },
+      { "speaker": "黄勇:", "speech": "说实话，如果我是你，我就去大同，春天的时候再去洛阳。" },
+      { "speaker": "飞龙:", "speech": "你说具体一点儿。" },
+      { "speaker": "黄勇:", "speech": "大同的云冈石窟也非常有名，而且跟洛阳比，大同离北京比较近。" },
+      { "speaker": "飞龙:", "speech": "你说的也对。对了，你刚才说春天去洛阳，为什么？" },
+      { "speaker": "黄勇:", "speech": "等你去了，你就知道了。快去报名吧，除了你，其他人都报名了。" }
+    ],
+    "backLines": [
+      { "speaker": "黄勇:", "speech": "你可以选两个地方，先去洛阳或者大同，然后再去草原。", "pinyin": "Nǐ kěyǐ xuǎn liǎng ge dìfang, xiān qù Luòyáng huòzhě Dàtóng, ránhòu zài qù cǎoyuán.", "meaning": "Cậu có thể chọn hai nơi, trước tiên đi Lạc Dương hoặc Đại Đồng, sau đó lại đi thảo nguyên." },
+      { "speaker": "飞龙:", "speech": "好主意！这样既可以游览名胜古迹，又可以骑马看草原。", "pinyin": "Hǎo zhǔyi! Zhèyàng jì kěyǐ yóulǎn míngshèng gǔjì, yòu kěyǐ qímǎ kàn cǎoyuán.", "meaning": "Ý hay! Như vậy vừa có thể tham quan danh lam thắng cảnh di tích cổ, lại vừa có thể cưỡi ngựa ngắm thảo nguyên." },
+      { "speaker": "黄勇:", "speech": "洛阳、大同去一个就行了，你打算去哪儿呢？", "pinyin": "Luòyáng, Dàtóng qù yī ge jiù xíng le, nǐ dǎsuàn qù nǎr ne?", "meaning": "Lạc Dương, Đại Đồng đi một nơi là được rồi, cậu dự định đi đâu vậy?" },
+      { "speaker": "飞龙:", "speech": "当然是洛阳了。除了可以游览龙门石窟以外，还可以去少林寺。", "pinyin": "Dāngrán shì Luòyáng le. Chúle kěyǐ yóulǎn Lóngmén Shíkū yǐwài, hái kěyǐ qù Shàolín Sì.", "meaning": "Đương nhiên là Lạc Dương rồi. Ngoài việc có thể tham quan hang đá Long Môn ra, còn có thể đi chùa Thiếu Lâm." },
+      { "speaker": "黄勇:", "speech": "说实话，如果我是你，我就去大同，春天的时候再去洛阳。", "pinyin": "Shuō shíhuà, rúguǒ wǒ shì nǐ, wǒ jiù qù Dàtóng, chūntiān de shíhou zài qù Luòyáng.", "meaning": "Nói thật, nếu tớ là cậu, tớ sẽ đi Đại Đồng, đến mùa xuân thì lại đi Lạc Dương." },
+      { "speaker": "飞龙:", "speech": "你说具体一点儿。", "pinyin": "Nǐ shuō jùtǐ yīdiǎnr.", "meaning": "Cậu nói cụ thể một chút đi." },
+      { "speaker": "黄勇:", "speech": "大同的云冈石窟也非常有名，而且跟洛阳比，大同离北京比较近。", "pinyin": "Dàtóng de Yúngāng Shíkū yě fēicháng yǒumíng, érqiě gēn Luòyáng bǐ, Dàtóng lí Běijīng bǐjiào jìn.", "meaning": "Hang đá Vân Cương của Đại Đồng cũng vô cùng nổi tiếng, hơn nữa so với Lạc Dương, Đại Đồng cách Bắc Kinh khá gần." },
+      { "speaker": "飞龙:", "speech": "你说的也对。对了，你刚才说春天去洛阳，为什么？", "pinyin": "Nǐ shuō de yě duì. Duì le, nǐ gāngcái shuō chūntiān qù Luòyáng, wèishénme?", "meaning": "Cậu nói cũng đúng. Đúng rồi, cậu vừa nãy nói mùa xuân đi Lạc Dương, tại sao?" },
+      { "speaker": "黄勇:", "speech": "等你去了，你就知道了。快去报名吧，除了你，其他人都报名了。", "pinyin": "Děng nǐ qù le, nǐ jiù zhīdào le. Kuài qù bàomíng ba, chúle nǐ, qítā rén dōu bàomíng le.", "meaning": "Đợi cậu đi rồi, cậu sẽ biết. Mau đi đăng ký đi, ngoài cậu ra, những người khác đều đăng ký rồi." }
+    ]
+  },
+  {
+    "frontContext": "BÀI KHÓA 3: Bình luận về hoạt động du lịch của nhà trường",
+    "frontLines": [
+      { "speaker": "旁白:", "speech": "为了让留学生的学习生活更加丰富，学院要组织大家去外地旅游，一共有三个地方：内蒙古草原、大同和洛阳。" },
+      { "speaker": "旁白:", "speech": "上星期办公室给每个同学都发了一份旅行计划，向大家介绍游览内容和时间安排。" },
+      { "speaker": "旁白:", "speech": "这几天同学们都在讨论去哪儿旅游。" },
+      { "speaker": "旁白:", "speech": "喜欢自然风光的想去草原，喜欢古迹的想去大同，喜欢中国武术的想去洛阳。" },
+      { "speaker": "旁白:", "speech": "可是更多的人对三条路线都有兴趣，不知道去哪儿好。" }
+    ],
+    "backLines": [
+      { "speaker": "旁白:", "speech": "为了让留学生的学习生活更加丰富，学院要组织大家去外地旅游，一共有三个地方：内蒙古草原、大同和洛阳。", "pinyin": "Wèile ràng liúxuéshēng de xuéxí shēnghuó gèngjiā fēngfù, xuéyuàn yào zǔzhī dàjiā qù wàidì lǚyóu, yígòng yǒu sān ge dìfang: Nèiměnggǔ cǎoyuán, Dàtóng hé Luòyáng.", "meaning": "Để cho cuộc sống học tập của lưu học sinh thêm phong phú, học viện muốn tổ chức mọi người ra ngoài du lịch, tổng cộng có ba nơi: thảo nguyên Nội Mông, Đại Đồng và Lạc Dương." },
+      { "speaker": "旁白:", "speech": "上星期办公室给每个同学都发了一份旅行计划，向大家介绍游览内容和时间安排。", "pinyin": "Shàng xīngqī bàngōngshì gěi měi ge tóngxué dōu fā le yí fèn lǚxíng jìhuà, xiàng dàjiā jièshào yóulǎn nèiróng hé shíjiān ānpái.", "meaning": "Tuần trước văn phòng đã phát cho mỗi bạn học sinh một bản kế hoạch du lịch, giới thiệu với mọi người nội dung tham quan và sắp xếp thời gian." },
+      { "speaker": "旁白:", "speech": "这几天同学们都在讨论去哪儿旅游。", "pinyin": "Zhè jǐ tiān tóngxuémen dōu zài tǎolùn qù nǎr lǚyóu.", "meaning": "Mấy ngày nay các bạn học sinh đều đang thảo luận đi đâu du lịch." },
+      { "speaker": "旁白:", "speech": "喜欢自然风光的想去草原，喜欢古迹的想去大同，喜欢中国武术的想去洛阳。", "pinyin": "Xǐhuan zìrán fēngguāng de xiǎng qù cǎoyuán, xǐhuan gǔjì de xiǎng qù Dàtóng, xǐhuan Zhōngguó wǔshù de xiǎng qù Luòyáng.", "meaning": "Người thích phong cảnh tự nhiên thì muốn đi thảo nguyên, người thích di tích cổ thì muốn đi Đại Đồng, người thích võ thuật Trung Quốc thì muốn đi Lạc Dương." },
+      { "speaker": "旁白:", "speech": "可是更多的人对三条路线都有兴趣，不知道去哪儿好。", "pinyin": "Kěshì gèng duō de rén duì sān tiáo lùxiàn dōu yǒu xìngqù, bù zhīdào qù nǎr hǎo.", "meaning": "Nhưng mà càng nhiều người đối với ba tuyến đường đều có hứng thú, không biết đi đâu thì tốt." }
+    ]
+  }
+];
+
+let cards = [...originalCards];
+let index = 0;
+let flipped = false;
+
+function speakText(event, text) {
+  event.stopPropagation();
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'zh-CN';
+    utterance.rate = 0.9;
+    window.speechSynthesis.speak(utterance);
+  } else {
+    alert('Trình duyệt của bạn không hỗ trợ tính năng phát âm.');
+  }
+}
+
+function render(){
+  const c = cards[index];
+  
+  let frontHtml = `<div class="context-title">${c.frontContext}</div><table class="dialogue-table">`;
+  c.frontLines.forEach(line => {
+    frontHtml += `
+      <tr>
+        <td class="speaker-col-front">${line.speaker}</td>
+        <td class="speech-col">
+          ${line.speech}
+          <button class="audio-btn" onclick="speakText(event, '${line.speech.replace(/'/g, "\\'")}')" title="Nghe phát âm">🔊</button>
+        </td>
+      </tr>`;
+  });
+  frontHtml += `</table>`;
+  document.getElementById('frontContent').innerHTML = frontHtml;
+
+  let backHtml = `<div class="context-title">${c.frontContext}</div><table class="dialogue-table">`;
+  c.backLines.forEach(line => {
+    backHtml += `
+      <tr>
+        <td class="speaker-col">${line.speaker}</td>
+        <td class="speech-col-back">
+          ${line.speech}
+          <button class="audio-btn" onclick="speakText(event, '${line.speech.replace(/'/g, "\\'")}')" title="Nghe phát âm">🔊</button>
+          <div class="pinyin-block">${line.pinyin}</div>
+          <div class="meaning-text">${line.meaning}</div>
+        </td>
+      </tr>`;
+  });
+  backHtml += `</table>`;
+  document.getElementById('backContent').innerHTML = backHtml;
+
+  document.getElementById('progress').textContent = `Thẻ ${index+1} / ${cards.length}`;
+  document.getElementById('card').classList.toggle('flipped', flipped);
+}
+
+function flipCard(){
+  flipped = !flipped;
+  document.getElementById('card').classList.toggle('flipped', flipped);
+}
+
+function nextCard(){
+  index = (index + 1) % cards.length;
+  flipped = false; render();
+}
+
+function prevCard(){
+  index = (index - 1 + cards.length) % cards.length;
+  flipped = false; render();
+}
+
+function shuffleCards(){
+  for(let i=cards.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [cards[i],cards[j]]=[cards[j],cards[i]];
+  }
+  index=0; flipped=false; render();
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight') nextCard();
+  else if(e.key==='ArrowLeft') prevCard();
+  else if(e.key===' ' || e.key==='Enter'){
+    e.preventDefault();
+    flipCard();
+  }
+});
+
+render();
+</script>
+</body>
+</html>

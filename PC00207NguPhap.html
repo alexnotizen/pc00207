@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BÀI 7 – NGỮ PHÁP - Flashcard</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; font-family:Arial,"Microsoft YaHei",sans-serif;
+  background:#fdfbf7;
+  display:flex; justify-content:center; color:#202124;
+}
+.app{width:min(860px,96vw); padding:30px 0 40px}
+h1{text-align:center;margin:0 0 15px;font-size:38.4px; font-weight: bold;}
+.progress{text-align:center;font-size:21.6px;color:#444;margin-bottom:20px; font-weight: bold;}
+.card-wrap{perspective:1200px; cursor:pointer}
+.card{
+  width:100%; height:592px; position:relative; transform-style:preserve-3d;
+  transition:transform .55s ease;
+}
+.card.flipped{transform:rotateY(180deg)}
+.face{
+  position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden;
+  border-radius:24px; background:white; box-shadow:0 15px 45px rgba(0,0,0,.15);
+  display:flex; flex-direction:column; padding:36px; border:3px solid #eee; overflow-y:auto;
+}
+.front{justify-content:flex-start; align-items:flex-start; text-align:left}
+.back{transform:rotateY(180deg); text-align:left; align-items:flex-start; justify-content:flex-start; padding-top:40px;}
+
+.hl{color: #7c2d12; font-weight: bold; background-color: #fef08a; padding: 2px 6px; border-radius: 4px; border: 1px solid #eab308;}
+.hl-blue { color: #ffffff; font-weight: bold; background-color: #2563eb; padding: 2px 6px; border-radius: 4px; }
+.hl-red { color: #dc2626; font-weight: bold; }
+
+/* Pinyin mặt trước: căn giữa */
+.pinyin{
+  font-size:1.68em;
+  color:#666666;
+  margin-bottom:10px;
+  font-weight:bold;
+  text-align:center;
+  width:100%;
+}
+
+.zh-front { font-size: 2.16em; font-weight: bold; margin-bottom: 6px; line-height: 1.3; color: #dc2626; text-align: center; width: 100%; }
+
+/* Mặt sau */
+.zh-back { color: #2563eb; font-weight: bold; font-size: 1.74em; line-height: 1.2; display: inline-block; margin-top: 8px; margin-bottom: 2px; }
+.pinyin-back { color: #666666; font-weight: bold; font-size: 1.2em; display: block; margin: 2px 0; }
+.vi-back { font-size: 1.2em; color: #333; display: block; margin-bottom: 10px; }
+
+.desc-front { font-size: 1.38em; color: #333; margin: 8px 0; text-align: left; width: 100%; line-height: 1.4; }
+.desc{font-size: 1.38em; color: #333; margin: 0; text-align: left; width: 100%; line-height: 1.4;}
+
+.controls{display:flex;gap:20px;justify-content:center;margin-top:30px}
+button{
+  border:0;border-radius:20px;padding:20px 35px;font-size:26.4px;
+  cursor:pointer;background:#e9eef7;color:#233044; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,.1);
+}
+button.primary{background:#2563eb;color:white}
+</style>
+</head>
+
+<body>
+<div class="app">
+  <h1 id="title">BÀI 7 – NGỮ PHÁP</h1>
+  <div class="progress" id="progress"></div>
+
+  <div class="card-wrap" id="cardWrap" onclick="flipCard()">
+    <div class="card" id="card">
+      <div class="face front" id="frontFace"></div>
+      <div class="face back" id="backFace"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="event.stopPropagation();prevCard()">← TRƯỚC</button>
+    <button class="primary" onclick="event.stopPropagation();flipCard()">LẬT THẺ</button>
+    <button onclick="event.stopPropagation();nextCard()">TIẾP →</button>
+  </div>
+</div>
+
+<script>
+const cards = [
+  {
+    f: "<div class='zh-front'>NGHĨ XONG</div>" +
+       "<div class='zh-front'>想<span style='background-color: #2563eb; color: #ffffff; padding: 2px 6px; border-radius: 4px;'>好</span></div>" +
+       "<div class='pinyin'>xiǎng hǎo</div>" +
+       "<div class='desc-front'>" +
+       "<b>Động từ/Tính từ + <span style='color: #dc2626; font-weight: bold;'>好</span></b><br>" +
+       "Khi <span style='color: #dc2626; font-weight: bold;'>好</span> đứng sau một động từ, nó bổ sung ý nghĩa cho động từ đó, chỉ hành động đã đạt đến mức hoàn chỉnh, xong xuôi, sẵn sàng." +
+       "</div>",
+    b: "<div class='desc' style='line-height:1.5;'>" +
+       "<span class='zh-back'>不过我还没想好去哪儿。</span><br><span class='pinyin-back'>Búguò wǒ hái méi xiǎng hǎo qù nǎr.</span><span class='vi-back'>(Nhưng tớ vẫn chưa nghĩ xong sẽ đi đâu.)</span>" +
+       "<span class='zh-back'>小红，今天咱俩去哪儿玩儿？你想好了吗？</span><br><span class='pinyin-back'>Xiǎohóng, jīntiān zán liǎ qù nǎr wánr? Nǐ xiǎng hǎo le ma?</span><span class='vi-back'>(Tiểu Hồng, hôm nay hai chúng ta đi đâu chơi? Cậu nghĩ xong chưa?)</span>" +
+       "<span class='zh-back'>这台空调能修好吗？</span><br><span class='pinyin-back'>Zhè tái kōngtiáo néng xiū hǎo ma?</span><span class='vi-back'>(Cái điều hòa này có sửa được không?)</span>" +
+       "<span class='zh-back'>大家坐好，现在上课了。</span><br><span class='pinyin-back'>Dàjiā zuò hǎo, xiànzài shàngkè le.</span><span class='vi-back'>(Mọi người ngồi ngay ngắn đi, bây giờ vào học rồi.)</span>" +
+       "</div>"
+  },
+  {
+    f: "<div class='zh-front'>NGOÀI… (RA)</div>" +
+       "<div class='zh-front'>除了… (以外)</div>" +
+       "<div class='pinyin'>chúle ... (yǐwài)</div>" +
+       "<div class='desc-front'>" +
+       "Cấu trúc này có hai cách dùng chính:<br><br>" +
+       "<b><span style='color: #dc2626; font-weight: bold;'>除了</span> A <span style='color: #dc2626; font-weight: bold;'>(以外)</span>，B <span style='color: #dc2626; font-weight: bold;'>都</span></b><br>" +
+       "Ngoài A ra thì tất cả các B đều X.<br><br>" +
+       "<b><span style='color: #dc2626; font-weight: bold;'>除了</span> A <span style='color: #dc2626; font-weight: bold;'>(以外)</span>，<span style='color: #dc2626; font-weight: bold;'>还</span>/<span style='color: #dc2626; font-weight: bold;'>也</span> B</b><br>" +
+       "Ngoài A thì còn B nữa." +
+       "</div>",
+    b: "<div class='desc' style='line-height:1.5;'>" +
+       "<span class='zh-back'>可我除了去过几个南方城市以外，北方城市都没去过。</span><br><span class='pinyin-back'>Kě wǒ chúle qù guò jǐ gè nánfāng chéngshì yǐwài, běifāng chéngshì dōu méi qù guò.</span><span class='vi-back'>(Nhưng tớ ngoài việc đã từng đi qua mấy thành phố miền Nam ra, thì thành phố miền Bắc đều chưa đi qua.)</span>" +
+       "<span class='zh-back'>除了他骑自行车去以外，我们都坐公共汽车去。</span><br><span class='pinyin-back'>Chúle tā qí zìxíngchē qù yǐwài, wǒmen dōu zuò gōnggòng qìchē qù.</span><span class='vi-back'>(Ngoài cậu ấy đi xe đạp ra, chúng tôi đều đi xe buýt.)</span>" +
+       "<span class='zh-back'>除了冬天冷一点儿以外，这儿的气候很不错。</span><br><span class='pinyin-back'>Chúle dōngtiān lěng yìdiǎnr yǐwài, zhèr de qìhòu hěn búcuò.</span><span class='vi-back'>(Ngoài việc mùa đông lạnh một chút ra, khí hậu ở đây rất tốt.)</span>" +
+       "<span class='zh-back'>除了爱珍以外，没有人去过那个地方。</span><br><span class='pinyin-back'>Chúle Àizhēn yǐwài, méiyǒu rén qù guò nà gè dìfang.</span><span class='vi-back'>(Ngoài Ái Trân ra, không có ai từng đi qua nơi đó.)</span>" +
+       "<span class='zh-back'>除了可以游览龙门石窟以外，还可以去少林寺。</span><br><span class='pinyin-back'>Chúle kěyǐ yóulǎn Lóngmén Shíkū yǐwài, hái kěyǐ qù Shǎolín Sì.</span><span class='vi-back'>(Ngoài việc có thể tham quan hang đá Long Môn ra, còn có thể đi chùa Thiếu Lâm.)</span>" +
+       "<span class='zh-back'>快去报名吧，除了你，其他人都报名了。</span><br><span class='pinyin-back'>Kuài qù bàomíng ba, chúle nǐ, qítā rén dōu bàomíng le.</span><span class='vi-back'>(Mau đi đăng ký đi, ngoài cậu ra, những người khác đều đăng ký rồi.)</span>" +
+       "<span class='zh-back'>我们这儿除了中文书以外，还有外文书。</span><br><span class='pinyin-back'>Wǒmen zhèr chúle zhōngwén shū yǐwài, hái yǒu wàiwén shū.</span><span class='vi-back'>(Chỗ chúng tôi ngoài sách tiếng Trung ra, còn có sách tiếng nước ngoài.)</span>" +
+       "<span class='zh-back'>小明除了爱吃肉，也爱吃蔬菜。</span><br><span class='pinyin-back'>Xiǎomíng chúle ài chī ròu, yě ài chī shūcài.</span><span class='vi-back'>(Tiểu Minh ngoài thích ăn thịt ra, cũng thích ăn rau.)</span>" +
+       "<span class='zh-back'>除了她以外，还有两个同学也说错了。</span><br><span class='pinyin-back'>Chúle tā yǐwài, hái yǒu liǎng gè tóngxué yě shuō cuò le.</span><span class='vi-back'>(Ngoài cô ấy ra, còn có hai bạn học sinh nói sai nữa.)</span>" +
+       "</div>"
+  },
+  {
+    f: "<div class='zh-front'>THÚ THẬT, NÓI THẬT</div>" +
+       "<div class='zh-front'>说实话</div>" +
+       "<div class='pinyin'>shuō shíhuà</div>" +
+       "<div class='desc-front'>" +
+       "Đây là một cụm từ chèn vào câu để thu hút sự chú ý của người nghe, nhấn mạnh rằng điều mình sắp nói là sự thật, là điều quan trọng.<br>" +
+       "Cụm từ <b><span style='color: #dc2626; font-weight: bold;'>说真的</span></b> (nói thật đấy) cũng có ý nghĩa và cách dùng tương tự." +
+       "</div>",
+    b: "<div class='desc' style='line-height:1.5;'>" +
+       "<span class='zh-back'>说实话，我对烤肉也很有兴趣。</span><br><span class='pinyin-back'>Shuō shíhuà, wǒ duì kǎoròu yě hěn yǒu xìngqù.</span><span class='vi-back'>(Nói thật, tớ đối với thịt nướng cũng rất có hứng thú.)</span>" +
+       "<span class='zh-back'>说实话，如果我是你，我就去大同，春天的时候再去洛阳。</span><br><span class='pinyin-back'>Shuō shíhuà, rúguǒ wǒ shì nǐ, wǒ jiù qù Dàtóng, chūntiān de shíhou zài qù Luòyáng.</span><span class='vi-back'>(Nói thật, nếu tớ là cậu, tớ sẽ đi Đại Đồng, đến mùa xuân thì lại đi Lạc Dương.)</span>" +
+       "<span class='zh-back'>说实话，我确实想帮你，可现在…</span><br><span class='pinyin-back'>Shuō shíhuà, wǒ quèshí xiǎng bāng nǐ, kě xiànzài...</span><span class='vi-back'>(Nói thật, tớ thực sự muốn giúp cậu, nhưng bây giờ…)</span>" +
+       "<span class='zh-back'>说真的，你要是喜欢她，我可以给你介绍介绍。</span><br><span class='pinyin-back'>Shuō zhēn de, nǐ yàoshi xǐhuan tā, wǒ kěyǐ gěi nǐ jièshào jièshào.</span><span class='vi-back'>(Nói thật đấy, nếu cậu thích cô ấy, tớ có thể giới thiệu cho cậu.)</span>" +
+       "</div>"
+  },
+  {
+    f: "<div class='zh-front'>CẬU ĐI ĐÂU TỚ SẼ ĐI ĐÓ</div>" +
+       "<div class='zh-front'>你去<span style='background-color: #2563eb; color: #ffffff; padding: 2px 6px; border-radius: 4px;'>哪儿</span>，我就去<span style='background-color: #2563eb; color: #ffffff; padding: 2px 6px; border-radius: 4px;'>哪儿</span></div>" +
+       "<div class='pinyin'>nǐ qù nǎr, wǒ jiù qù nǎr</div>" +
+       "<div class='desc-front'>" +
+       "Lặp lại các từ để hỏi sẽ mang nghĩa như “… nào … nấy”, “… gì… đấy”.<br>" +
+       "Các từ để hỏi khác như <b><span style='color: #dc2626; font-weight: bold;'>什么</span></b>, <b><span style='color: #dc2626; font-weight: bold;'>谁</span></b>, <b><span style='color: #dc2626; font-weight: bold;'>怎么</span></b>… cũng có thể dùng theo cách này." +
+       "</div>",
+    b: "<div class='desc' style='line-height:1.5;'>" +
+       "<span class='zh-back'>你去哪儿，我就去哪儿。</span><br><span class='pinyin-back'>Nǐ qù nǎr, wǒ jiù qù nǎr.</span><span class='vi-back'>(Cậu đi đâu, tớ sẽ đi đó.)</span>" +
+       "<span class='zh-back'>哪个商店的东西又好又便宜，哪个商店的人就多。</span><br><span class='pinyin-back'>Nǎ gè shāngdiàn de dōngxi yòu hǎo yòu piányi, nǎ gè shāngdiàn de rén jiù duō.</span><span class='vi-back'>(Cửa hàng nào đồ vừa tốt vừa rẻ, thì cửa hàng đó đông người.)</span>" +
+       "<span class='zh-back'>他想怎么办就怎么办，从来不听我们的。</span><br><span class='pinyin-back'>Tā xiǎng zěnme bàn jiù zěnme bàn, cónglái bù tīng wǒmen de.</span><span class='vi-back'>(Anh ấy muốn làm thế nào thì làm thế ấy, chưa bao giờ nghe chúng tôi.)</span>" +
+       "<span class='zh-back'>谁愿意去谁去。</span><br><span class='pinyin-back'>Shéi yuànyì qù shéi qù.</span><span class='vi-back'>(Ai muốn đi thì người đó đi.)</span>" +
+       "<span class='zh-back'>你买什么，我们就吃什么。</span><br><span class='pinyin-back'>Nǐ mǎi shénme, wǒmen jiù chī shénme.</span><span class='vi-back'>(Cậu mua cái gì, chúng tớ sẽ ăn cái đó.)</span>" +
+       "</div>"
+  },
+  {
+    f: "<div class='zh-front'>VỪA… LẠI VỪA</div>" +
+       "<div class='zh-front'>既…<span style='color: #dc2626; font-weight: bold;'>又</span>…</div>" +
+       "<div class='pinyin'>jì ... <span style='color: #dc2626; font-weight: bold;'>yòu</span> ...</div>" +
+       "<div class='desc-front'>" +
+       "Diễn đạt hai đặc điểm hoặc hai tình huống cùng lúc.<br>" +
+       "Trang trọng hơn so với <span style='color: #dc2626; font-weight: bold;'>又</span>…<span style='color: #dc2626; font-weight: bold;'>又</span>…" +
+       "</div>",
+    b: "<div class='desc' style='line-height:1.5;'>" +
+       "<span class='zh-back'>这样既可以游览名胜古迹，又可以骑马看草原。</span><br><span class='pinyin-back'>Zhèyàng jì kěyǐ yóulǎn míngshèng gǔjī, yòu kěyǐ qímǎ kàn cǎoyuán.</span><span class='vi-back'>(Như vậy vừa có thể tham quan danh lam thắng cảnh di tích cổ, lại vừa có thể cưỡi ngựa ngắm thảo nguyên.)</span>" +
+       "<span class='zh-back'>他既不懂英语，又不懂汉语，我们在一起没办法谈话。</span><br><span class='pinyin-back'>Tā jì bù dǒng yīngyǔ, yòu bù dǒng hànyǔ, wǒmen zài yìqǐ méi bànfǎ tánhuà.</span><span class='vi-back'>(Anh ấy vừa không hiểu tiếng Anh, lại vừa không hiểu tiếng Trung, chúng tôi ở cùng nhau không thể nói chuyện được.)</span>" +
+       "<span class='zh-back'>飞龙既聪明又努力，是个好学生。</span><br><span class='pinyin-back'>Fēilóng jì cōngmíng yòu nǔlì, shì gè hǎo xuéshēng.</span><span class='vi-back'>(Phi Long vừa thông minh lại vừa chăm chỉ, là một học sinh giỏi.)</span>" +
+       "<span class='zh-back'>这些水果既便宜又好吃，你可以多买点儿。</span><br><span class='pinyin-back'>Zhèxiē shuǐguǒ jì piányi yòu hǎochī, nǐ kěyǐ duō mǎi diǎnr.</span><span class='vi-back'>(Những loại hoa quả này vừa rẻ lại vừa ngon, cậu có thể mua thêm một chút.)</span>" +
+       "</div>"
+  },
+  {
+    f: "<div class='zh-front'>ĐỢI… THÌ SẼ…</div>" +
+       "<div class='zh-front'>等…，就/再…</div>" +
+       "<div class='pinyin'>děng ..., jiù / zài ...</div>" +
+       "<div class='desc-front'>" +
+       "<b><span style='color: #dc2626; font-weight: bold;'>等</span> + động từ/vế câu + <span style='color: #dc2626; font-weight: bold;'>就</span>/<span style='color: #dc2626; font-weight: bold;'>再</span> + động từ/vế câu</b><br>" +
+       "Đợi đến sau khi chuyện gì đó xảy ra thì sẽ làm gì đó.<br><br>" +
+       "Phủ định: <b><span style='color: #dc2626; font-weight: bold;'>没</span><span style='color: #dc2626; font-weight: bold;'>等</span>…</b> hoặc <b><span style='color: #dc2626; font-weight: bold;'>不</span><span style='color: #dc2626; font-weight: bold;'>等</span>…</b> (chưa đợi… / không đợi…) đã…" +
+       "</div>",
+    b: "<div class='desc' style='line-height:1.5;'>" +
+       "<span class='zh-back'>等那里没人了，我就来拍照。</span><br><span class='pinyin-back'>Děng nàlǐ méi rén le, wǒ jiù lái pāizhào.</span><span class='vi-back'>(Đợi ở đó vắng người tôi sẽ đến chụp ảnh.)</span>" +
+       "<span class='zh-back'>等你去了，你就知道了。</span><br><span class='pinyin-back'>Děng nǐ qù le, nǐ jiù zhīdào le.</span><span class='vi-back'>(Đợi cậu đi rồi, cậu sẽ biết.)</span>" +
+       "<span class='zh-back'>等他说完了你再说。</span><br><span class='pinyin-back'>Děng tā shuō wán le nǐ zài shuō.</span><span class='vi-back'>(Đợi anh ấy nói xong cậu hãy nói.)</span>" +
+       "<span class='zh-back'>等写完作业我就去。</span><br><span class='pinyin-back'>Děng xiě wán zuòyè wǒ jiù qù.</span><span class='vi-back'>(Đợi viết xong bài tập tớ sẽ đi.)</span>" +
+       "<span class='zh-back'>等你长大了就明白为什么了。</span><br><span class='pinyin-back'>Děng nǐ zhǎng dà le jiù míngbai wénshénme le.</span><span class='vi-back'>(Đợi cậu lớn lên sẽ hiểu tại sao.)</span>" +
+       "<span class='zh-back'>没等我们坐好，客队就进了一个球。</span><br><span class='pinyin-back'>Méi děng wǒmen zuò hǎo, kèduì jiù jìn le yí gè qiú.</span><span class='vi-back'>(Không đợi chúng tôi ngồi xuống, đội khách đã ghi một bàn thắng.)</span>" +
+       "<span class='zh-back'>没等电影结束，很多人就走了。</span><br><span class='pinyin-back'>Méi děng diànyǐng jiéshù, hěn duō rén jiù zǒu le.</span><span class='vi-back'>(Chưa/không đợi phim kết thúc, rất nhiều người đã đi rồi.)</span>" +
+       "</div>"
+  }
+];
+
+let idx = 0;
+
+function render() {
+  document.getElementById('frontFace').innerHTML = cards[idx].f;
+  document.getElementById('backFace').innerHTML = cards[idx].b;
+  document.getElementById('progress').innerText = `Thẻ ${idx + 1} / ${cards.length}`;
+}
+
+function flipCard() {
+  document.getElementById('card').classList.toggle('flipped');
+}
+
+function nextCard() {
+  idx = (idx + 1) % cards.length;
+  document.getElementById('card').classList.remove('flipped');
+  render();
+}
+
+function prevCard() {
+  idx = (idx - 1 + cards.length) % cards.length;
+  document.getElementById('card').classList.remove('flipped');
+  render();
+}
+
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+    nextCard();
+    event.preventDefault();
+  } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+    prevCard();
+    event.preventDefault();
+  } else if (event.key === ' ' || event.key === 'Enter') {
+    flipCard();
+    event.preventDefault();
+  }
+});
+
+render();
+</script>
+</body>
+</html>
